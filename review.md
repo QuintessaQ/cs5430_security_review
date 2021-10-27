@@ -248,3 +248,55 @@
     - KDC in a large network
         - partition the network (namespace) into realms
         - have a separate KDC for each realm.
+
+## Public Key Certification Authorities
+- certification authority (CA)
+    - A service is needed that will provide a binding between a principal's name and public key
+    - to trust that this binding is correct, the service (CA) signs the representation of the binding
+    - public key of CA well-known
+        - anyone could verify the signature
+    - two functions
+        - certify bindings (i.e. certification)
+        - store the certificates.
+- certificate revocation list (CRL)
+    - need a scheme to assert that a certificate that has not yet expired is no longer valid
+    - assign a unique serial number to each certificate
+    - maintain CRL
+    - {time of issue, revoked serial number, revoked serial number, ...}CA
+    - A certificate is considered invalid if 
+        - the expiration date has expired
+        - or the serial number of the certificate appears on a recent CRL.
+    - small expiration time 
+        - certificates will be constantly reissued and lots of traffic will be generated
+    - large expiration time 
+        - long CRLs
+-  how does a principal in one CA's domain get a public key for a principal in a different CA's domain?
+- Privacy Enhanced Mail (PEM)
+    - have a CA for each subtree of the namespace
+        - a CA named A/B/C is responsible for all names of the from A/B/C/* 
+    - CA at the root is too sensitive. 
+        - Compromising A's private key in the above example would compromise everything below A
+- Internet Policy Registration Authority (IPRA)
+    - 3 classes of PCA (Policy Certificate Authorities)
+        - High assurance 
+            - Super secure with strict tests before issuing certificates to check identity
+            - The same rules apply to all the CAs below the high assurance PCA in the subtree.
+        - Discretionary assurance 
+            - Well-managed at the top level
+            - but no rules are imposed on organizations that are certified below the top level.
+        - No assurance 
+            - No statement can be made about the authority of this PCA.
+- Pretty Good Privacy (PGP)
+    - each user is responsible for maintaining their own set of public keys on a key ring
+    - Users decide for themselves who to trust.
+    - asks each user to assign a "trust rating" to each public key that is on the user's public key ring.
+        - valid
+            -  the user believes that the key is associated with whom the user was told it is associated with
+        - trust
+            - a measure of how much the user trusts the principal as a signer
+            - none
+            - partial
+            - complete
+    - key valid if  
+        - certificate is signed by a principal the user completely trusts
+        - certificate is signed by two partially trusted users
