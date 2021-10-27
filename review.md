@@ -300,3 +300,78 @@
     - key valid if  
         - certificate is signed by a principal the user completely trusts
         - certificate is signed by two partially trusted users
+
+## Certificate Authorities: Reasoning about cross-linked CA's
+- CA stores bindings from principal names to public keys (certificates)
+    - <A, K_A>k_CA
+    - <G, K_G>k_CA
+    - anyone with access to 𝐶𝐴’s public key can check the signature
+    - assuming that k_CA is never compromised
+- From a Single CA to Multiple Cross-linked CA’s
+    - multiple CAs
+    - CIA
+        - <A, K_A>k_CA-CIA
+        - <KGB, K_CA-KGB>k_CA-CIA
+    - KGB
+        - <B, K_B>k_CA-KGB
+    - suppose A wants to learn B's public key
+    - chain of certificates
+        - A has K_CA-CIA
+        - A retrieves <KGB, K_CA-KGB>k_CA-CIA from the CIA database
+        - A retrieves <B, K_B>k_CA-KGB from the KGB database
+        - A uses K_CA-KGB to check that she can trust <B, K_B>k_CA-KGB
+        - now A can use K_B
+- definitions
+    - Principals can say things
+        - Principals only say things that they believe
+        - a set w(P) defined to be the set of statements (propositions) that P believes
+        - also known as the worldview of P. 
+        - So P says m holds if and only if m \in w(P) holds.
+    - Principals may “speak for” (sfor) other principals 
+        - e.g. a keyboard on which A is typing is a principal and that principal speaks for A
+        - Henceforth let A sfor B mean that A “speaks for” B, or A => B
+        - A sfor B iff w(A) \subset w(B)
+        - anything A says, B says, too
+        - a keyboard in practice will say things that are completely independent of A, and thus, not a part of A’s worldview. 
+            - thus keyboard cannot speak for 𝐴.
+- formal inference rules for says and sfro
+    - R1
+        ```
+        <m>k
+        ------
+        K says m
+        ```
+        - crypto key-pair (K, k) is being viewed as defining a principal
+        - this principal is identified by its public key K
+    - R2
+        ```
+        A sfor B, B sfor C
+        -------------------
+        A sfor C
+        ```
+        - follows from the transitivity of the \subset operator
+    - R3
+        ```
+        A sfor B, A says X
+        -------------------
+        B says X/'
+
+        ```
+    - R4
+        ```
+        A says B sfor A
+        ----------------
+        B sfor A
+        ```
+    - R5
+        ```
+        A.n is a subprinciple of A
+        --------------------------
+        A sfor A.n
+        ```
+        - w(A) \subset w(A.n)
+- ![proof tree](imgs/proof_tree.png)
+    - <KGB, K_CA-KGB>k_CA-CIA
+        - equivalent to K_CA-CIA says 'K_CA-KGB sfor KGB'
+
+## Naming
