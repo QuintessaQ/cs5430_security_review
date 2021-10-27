@@ -167,3 +167,84 @@
         3. A --> B: A,B, {A,B,K_AB,r"}K_B
         4. B --> A: {r'}K_AB where r' is a new random value 5. A-->B:{r'+1}K_AB
         ```
+
+## Kerberos
+- Key Management
+    - Employing a KDC requires O(n) keys: a shared key K_A between every host A and the KDC. 
+    - disadvantages of KDC-based system
+        - the need for a protocol
+        - the need to trust the KDC
+        - the fact that KDC itself becomes a performance bottleneck.
+- kerberos
+    - key distribution facility designed at MIT to manage networks of workstations and servers.
+    - a tendency for people to leave a workstation 'alone' while they were still logged in. 
+    - how it works
+        - user logs into workstation, and provides username and password
+        - workstation uses the username and password to obtain credentials that are used by processes to access remote resources on behalf of the user
+        - session = unit of certification is a 
+        - A session is the period of time from logon to logoff at a given workstation.
+    - workstation uses a session key instead of a master key or password
+    - workstations erase the master key as soon as possible
+- kerbero protocols
+    - logging on to the network
+        - A is a person
+        - WkStation_A is a computer owned by A
+        - K_A is the master key for A
+        - KDC is a server.
+    - protocol
+        ```
+        A --> WkStation_A:  A wishes to login.
+
+        WkStation_A --> KDC:  A needs TGT
+
+        KDC:   invent fresh session key S_A
+            lookup K_A in local database
+            TGT := {A , S_A , expTime}K_KDC
+
+        KDC --> WkStation_A:  { S_A , TGT }K_A
+
+        WkStation_A --> A:  Password?
+
+        A --> WkStation_A:   Password is: xxxxxx
+
+        WkStation_A:  Derive K_A from Password  xxxxxx
+                    Extract S and TGT from "{ S_A , TGT }K_A" received earlier
+                    Forget K_A at WkStation_A
+
+        ```
+    - period of significant vulnerability   
+        - while the workstation is storing K_A (after asking for the password)
+    - relevant state is encoded in the TGT
+        - KDC does not need to remember any state 
+    - Suppose that A would like to get credentials for a resource B
+        ```
+        A --> WkStation_A:  A wishes to access service B.
+
+        WkStation_A --> KDC:  A, B, TGT
+
+        KDC:  invent fresh key K_AB
+            extract S_A from TGT found in message from WkStation_A
+            Tick_B := {A, B, K_AB, expTime}K_B
+
+        KDC --> WkStation_A:  {B, K_AB, Tick_B}S_A
+        ```
+
+        ```
+        WkStation_A --> B:   Tick_B, {timeNow}K_AB #authenticator
+
+        B:  extract A, B, K_AB, and expTime from Tick_B (since B knows K_B)
+            abort unless timeNow < expTime
+
+        B --> WkStation_A:  {timeNow+1}K_AB
+        ```
+        - From this second authenticator, A can determine that whoever sent the massage knows K_AB
+            - thus was able to decrypt Tick_B, thus knew K_B and thus had to have been B.
+        - does not prevent a 'replay' of a current request
+            - B should keep all the requests for the last 5 minutes
+            - check that all the requests from a given source are for different times.
+- Engineering Issues in Kerberos
+    - one master KDC and n slave copies that contain read-only copies of the data. 
+        - data can be transferred from the master to slave KDCs without additional encryption 
+    - KDC in a large network
+        - partition the network (namespace) into realms
+        - have a separate KDC for each realm.
