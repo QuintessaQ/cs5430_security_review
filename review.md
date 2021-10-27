@@ -375,3 +375,64 @@
         - equivalent to K_CA-CIA says 'K_CA-KGB sfor KGB'
 
 ## Naming
+- properties
+    - use of one name does not prevent other names from being used
+        - naming a file in the current directory shouldn't prevent you from naming a file in some other directory.
+    - If an object does not have a name, then it is not accessible
+        - A name is the only way to denote an object.
+    - Singular objects do not require names.
+        - e.g. in uniprocessor machines, the single processor was unnamed and referred to implicitly.
+- purpose
+    - sharing
+        - Different entities can share an object through its name
+        - If there are two or more processes accessing the same object
+            - they can set up names and use them to denote the object
+            - each entity could use a different name for the same object.
+    - secrecy
+        - In a large name space, usually only a small fraction of possible names are used.
+        - it is not obvious what this fraction will be. 
+        - e.g. password
+- concerns
+    - scalability
+        - variable length names
+            - The name space is potentially infinite.
+        - unique names
+            - The same name cannot be used to refer to two different object
+            - Duplicate names would preclude controlled sharing and secrecy. 
+        - no single central authority to produce names
+            - a single authority becomes a performance bottleneck
+            - a single point of failure
+        - a manageable cost to produce new names
+            - A distributed linear algorithm is usually not good enough.
+    - hierarchical naming
+        - indefinite growth in both directions
+            - we can add either area codes or extensions to expand phone numbers.
+            - distributed authority to create names
+                - e.g. one authority would be in charge of names beginning with a/b/c
+                - while another would be in charge of names beginning with a/b/d
+                - if each authority maintains uniqueness in its sub-domain
+                    - we will have global uniqueness of names
+    - name information
+        - names accompanied by hints
+            - We must be able to access hints for a given name, 
+            - if the hints are stale, we must be able to correct them.
+        - impure names
+            - a name is pure if there is no content in the name
+            - An impure name contains attributes of the object it names. 
+                - pros
+                    - we can easily extract necessary information from the name itself
+                - cons
+                    - impure names have a built-in consistency problem
+                    - when the information is no longer correct, the name must change
+- binding
+    - the association of name to object
+    - names uttered with respect to a certain context
+    - context maps names to objects
+    - properties
+        - The mapping is partial
+            - only a small fraction of the name space is used.
+        - The mapping is subject to change
+            - happens slowly and infrequently
+            - E.g., after a file is edited, the same file name now refers to a different bit stream.
+        - The domain of the context is interesting. 
+            - We enumerate the names in a domain or sub-domain when we need to create new, unique names.
