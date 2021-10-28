@@ -436,3 +436,112 @@
             - E.g., after a file is edited, the same file name now refers to a different bit stream.
         - The domain of the context is interesting. 
             - We enumerate the names in a domain or sub-domain when we need to create new, unique names.
+
+## Measured Principals and Gating Functions
+- measured principal definiting characteristics
+    - binary being executed
+    - initialization data read
+    - the name of a measured principal that is providing the execution environment
+- gating function
+    - [K-F](*)
+    - Key K can be used only by gating functions [K-F](⋅) naming K. Other accesses to K are blocked.
+    - invocations of K-F(⋅) succeed only in systems satisfying an associated configuration constraint Config([K-F])
+        - which is a set of measured principals that must have started executing.
+    - enforce a form of authentication-based access control
+        - where binary executables and their run-time environments are being authenticated.
+        - an invocation of [K-F](⋅) requires that the measured principals in Config([K-F]) have started executing,
+        - the name of a measured principal can be associated with properties that we believe will be satisfied by that principal’s executions.
+    - Confidentiality can be enforced by using encryption.
+    - Integrity can be protected by using digital signatures, message authentication codes, or authenticated encryption
+
+### Measured Principal Descriptions
+- measured principal's name N(D)
+    - derive from description D = d1, d2, ..., dn
+    - changing any of the descriptos result in a enw description D'
+    - each descriptor di is derived from some resource at the time of first access by the measured principal being named
+    - descriptors are listed in order of first access by the measured principal being named.
+    - examples of resources
+        - hardware processors
+        - input/output devices
+        - executables
+        - regions of storage
+        - files.
+- Completeness of Descriptions
+    - more-complete description for a measured principal P can facilitate blocking attacks embedded in a modified version P′ that masquerades as P.
+    - The different name would cause gating functions to block P' from using the cryptographic keys that P is using
+
+### Naming Schemes for Measured Principals
+- attacker can control the order resourced are accessed
+    - can control description for the resulting measured principal
+    - but infeasible to predict the name N(D) assigned to MP
+- properties of func N()
+    - collision resistance
+        - if D != D', then N(D) != N(D') holds with high probability
+    - preimage resistance
+        - given D, infeasible to construct D' such that D != D' and N(D) = N(D')
+    - N(D) = 
+        - 0 if D = \empty
+        - H(N(d1, ..., d_{n-1}) * H(d_n)) if D = d1, ..., dn 
+-  if N (DP) = N_P holds and the integrity of name N_P is trusted 
+    - then DP can be trusted, too.
+- Descriptor Details
+    - Descriptors for Programs and Data
+        - a descriptor dO for an object O should be a collision and preimage resistant function of the bit string B_O that is representing O
+        - cryptographic hash H( BO ).
+        - <ARM_O, AID_O>
+            - ARM_O is an address-relocation map
+            - AIDO is an address-independent description
+    - Descriptors for Hardware Processors.
+        - If each hardware processor hw has a unique name N (hw) then use H(N (hw)) as the descriptor d_hw
+        - if each hardware processor provide a read-only register that contains a unique name for use in forming the processor’s descriptor 
+            - easy to subvert
+        - deriving a name N(hw) for a hardware processor hw from a unique signing key k^id_hw that hw stores, uses but never reveals
+        - N(hw) K^id_hw
+        - qkr_id comes preloaded with k^id_hw
+            - this register cannot be accessed except by executing instruction ``quote(qkr_id, r, out)``
+            - computes k^id_hw-S(r)
+            - writes value into memory out
+        - if r is fresh, AuthHW(K, r) returns true
+            - then N(hw) = K
+            - underlying processor has name K.
+        - 
+            ```
+            AuthHW : function(K, r) 
+                quote(qkr_id , r, out )
+                if K-S?(out)
+                    then return( true )
+                    else return( false ) 
+                end AuthHW
+            ```
+        - k_C-S(K^id_hw speaksfor ISA_hw)
+            - C is the processor's manufacturer, or some trusted party
+            - K_C well known
+            - ISA_hw is a subprincipal of C
+            - attacker would not be able to create an instance of certificate for a public key K chosen by the attacker.
+        - additional names for hardware processor
+            - otherwise might reveal whether two measured principals are sharing a processor
+            - processor hw to have one or more attestation identity keys
+                - each a surrogate for K^id_hw
+                - validity of attestation identity key K_hw^A
+                    - k_T-S(K_hw^A speaksfor ISA_hw)
+                    - signed by some trusted third-party T
+                    - K_T well known
+                    - generated by T in response to a request
+                        - k_C-S(K^id_hw speaksfor ISA_hw)
+                        - k^id_hw-S(K^A_hw speaks for K^id_hw)
+    - descriptors for properties
+        - various implementations
+            - A signed certificate from a trusted organizatio
+                -  where the contents identifies the property that is purported to hold.
+            - The output of an analyzer
+- auxiliary information
+    - requirements for Aux_i
+        - identification and retrieval of the objects involved in calculating descriptor d_i,
+        - recalculation of d_i from those objects, and
+        - assessment of whether those objects should be trusted.
+    - Checking Integrity of Auxiliary Information
+        - check N_P = N(D_P)
+        - for each d_i in candidate description D_P, check integrity of associated aux info Aux_i
+            - obtain copies of associated resources
+            - use copies to compute a descriptor d_i', and compare d_i' with d_i
+### Hardware Support for Gating Functions
