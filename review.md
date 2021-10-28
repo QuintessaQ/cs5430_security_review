@@ -652,3 +652,80 @@
             in for (j, val_j) \in keyArchive do kr_j := val_j
             ```
         - restores those values to their original key registers
+- quoting
+    - A quoted bit string will have an unforgeable digital signature affixed
+    - Quoting-key register qkr_id has a fixed value and has no associated configuration constraints
+        - qkr_id.key = k^id_hw
+            - k^id_hw is a unique signing key associated with the processor hw that hosts this register
+        - qkr_id.config = \empty
+    - verification key for checking digital signature & certificates are not secret
+        - stored in memory
+    - QKRgen(qkr_i, crSet, mem)
+        ```
+        qkr_i.config := {<i, v_i> | crSet[i] \wedge mr_i = v_i}
+        let k/K be a fresh private/public key pair
+        in qkr_i.key := key
+            mem := qkr_id.key-S(qkr key: i | K)
+        ```
+    - quotre(qkr_i, in, out)
+        ```
+        if ConfigSat(qkr_i.config)
+        then out := qkr_i.key-S(sig: i | in)
+        else fail
+        ```
+        - has a diff prefix
+    - retrieving config
+        - To trust results produced by executing a gating function [K-F](*)
+        - requires knowledge of the configuration constraint associated with the key register that stores K.
+        - KRgetConfig(kr_i, r, out)
+            ```
+            out := qkr_id.key-S(keyCnfig:i | r | kr_i.config)
+            ```
+            - provides that information
+            - stores into memory a k^id_hw-signed certificate for the config constraint associated with a specified key register
+        - KRgetCurConfig reveals the current configuration
+            ```
+            cc := {<i, v_i> | i \in crSet \wedge mr_i = v_i}
+            out := qkr_id.key-S(curCnfig: r | cc)
+            ```
+            - stoes into memory a k^id_hw-signed certificate giving the current values for any designated set of measurement registers
+            - r defend against replay attacks
+            - certificates includeing mr_0 in crSet
+                - useful for defending attacks that replay outdated immutable data objects
+                - including old descriptions of measured principals and old configuration constraints
+- binding and unbinding
+    - By encrypting some information under public key K
+        - we are binding that information to the specific system that is able to use gating function [k-D](⋅) to invert that encryption.
+        - [k-D](*) implements unbinding
+    - Encryption under a public key can be performed by a remote processor
+        - because public keys can be shared freely. 
+        - location flexibility distinguishes binding from sealing. 
+        - Sealing must be performed on the same processor as the unsealing
+            - both operations must access the same key register
+    - UKRgen(ukr_i, crSert, mem)
+        ```
+        ukr_i.config := {<i, v_i> | crSet[i] \wedge mr_i = v_i}
+        let k/K be a fresh private/public key pair
+        in ukr_i.key := key
+        mem := qkr_id.key-S(ukr key: i | K)
+        ```
+    - UKRdec(ukr_i, in, out)
+        ```
+        if ConfigSat(ukr_i.config)
+        then out := ukr_i.key-D(in)
+        else fail
+        ```
+
+## Remote attestation
+
+- remote attestation protocol returns to its initiator
+    - the name P for a measured principal being executed by a remote host,
+    - an attestation public key K^att_P for verifying signatures on messages digitally signed by P.
+
+### A Remote Attestation Protocol
+- ![remote attestation](imgs/remote_att.png)
+- dependson following assumptions
+    - R trusts S and has an attestation public key K^att_S that verifies signatures on messages digitally signed by S.
+    - S is the environment that executes P. 
+        - Thus, description D_S is a prefix of D_P and P = N(D_P)
+    - S implements gating function [k^att_P-S](⋅) for generating digital signatures
