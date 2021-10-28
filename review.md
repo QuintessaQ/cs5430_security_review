@@ -545,3 +545,110 @@
             - obtain copies of associated resources
             - use copies to compute a descriptor d_i', and compare d_i' with d_i
 ### Hardware Support for Gating Functions
+- idealized embodiment
+    - Instructions to update measurement registers
+        - All but one of the measurement registers is reset whenever the processor reboots
+        - used for defining configuration constraints.
+    - instructions to generate fresh crypto keys, store keys in key registers
+        - values stored in key registers persist across reboots
+        - sealing-key registers skr_1, ..., skr_N
+        - quoting-key registers qkr_id, qkr_1, ..., qkr_N
+        - unbinding key registers ukr_1, ..., ukr_N
+    - instructions that use a key K in a specified key register, and compute a gating func [K-F](*) to perform
+        - sealingprotect the confidentiality and integrity of local content,
+        – quoting to establish authenticity of locally produced content, or
+        – binding to import remote content but only if the local system satisfies certain configuration constraints,
+        - Config([K-F]) defined in terms of measurement register contents
+    - confidentiality of crypto keys is protected
+        - unencrypted keys never leave key registers 
+        - instructions that use the contents of a key register are computing cryptographic functions that, by design, reveal nothing about the key.
+    - mr have to return to the values they had before the reboot
+        - same set of measured principals running after the reboot as before the reboot
+- Measurement Registers and Constraints
+    - mr_0 automatically incremented each time the system reboots
+    - create ephemeral key
+        - include this counter in a configuration constraint
+        - a key that becomes unusable after a reboot occurs.
+        - defend against TOCTOU (time-of-check, time-of-use) attacks
+            - an attacker instigates a reboot to load and start malware that will run in place of principals
+                - that had been authenticated by some remote service
+            - causing the remote service to confuse messages from the malware with messages being from the authenticated principals
+    - system mode instructions MRreset & MRextend updates mr_1, ..., mr_N
+        - MRreset(mr_i)
+            - mr_i := 0
+        - MRextend(mr_i, mem)
+            - mr_i := H(mr_i * H(mem))
+            - `mem` denotes the contents (not the address) of some memory region
+            - making mr_i ideally suited to storing names of measured principals.
+    - configuration constraints
+        - specified by listing a subset of the mr and a value it must store
+            - C = {...,<i, v_i>}
+            - \Wedge_{<i, v_i> \in C} mr_i = v_i
+        - C is satisfied during execution iff. 
+            - current values of the measurement registers that C mentions agree with the values C prescribes
+            - ConfigSat(C): <i, v_i> \in C => mr_i = v_i
+        - chain of trust
+            - follow execution back througj the OS, boot-loader, firmware, ...
+- Seal and Unseal
+    - definitions
+        - gating func to convert between unsealed bit strings and K/C-sealed bit strings
+        - K is a symmetric key
+            - stored in sealing-key register
+        - C is config constraint
+        - Reading a K/C-sealed bit string `sb` reveals nothing about K or about the unsealed bit string from which sb was derived.
+        - Updates to a K/C-sealed bit string are not blocked but cause subsequent execution of unseal to fail.
+            - availability of K/C-sealed bit string compromised by writing to it
+            - but integrity is not compromised
+        - SKRgen
+            - SKRgen generates a fresh symmetric key
+            - loads that key into an indicated sealing-key register
+            - associates a configuration constraint defined by the current values of those mr selected by a bit string crSrt 
+            - skr_i comprises two fields
+                - skr_i.key = fresh symmetric key
+                - skr_i.config = {<i, v_i> | crSet[i] \wedge mr_i = v_i}
+    - seal(skr_i, in, out)
+        - 
+            ```
+            out := skr_i.key-E^A(in)
+            ```
+        - gating func for shared-key authenticated encryption func K-E^A(*)
+        - encryt info
+    - unseal(skr_i, in, out)
+        - 
+            ```
+            if ConfigSat(skr_i.config)
+                - then out := skr_i.key-D^A(in)
+                - else fail
+            ```
+        - gating func for shared-key authenticated decryption func K-D^A(*)
+        - fails (instead of decrypt) if argument not produced by K-E^A(*)
+    - By sealing the state that is being saved between executions of a given program or service
+        - protect the confidentiality of that state from attackers
+        — including across system reboots
+- Sealed-State Upgrade Protocol
+    - System invokes unseal
+        - transform all sealed bit strings data into unsealed bit strings.
+    - Perform software upgrade
+        - Upgraded system is now executing and has access to unsealed bit strings generated in step 1.
+    - Upgraded system resets then reloads measurement registers
+        - reprovisions the sealing-key registers 
+        - using configuration constraints that are defined using updated values in measurement registers
+    - Upgraded system, using reprovisioned sealing-key registers
+        - invokes seal to transform unsealed bit strings from step 1 back into sealed bit strings.
+- Key archives
+    - KRseal(skr_i, krSet, ska)
+        - 
+            ``  
+            let keyArchive = {(j, v_j) | krSet[j] \wedge kr_j = v_j}
+            in ska := seal(skr_i, keyArchive)
+            ```
+        - seals the contents of some specified subset of the key registers
+        - including key and config constraint fields for each
+        - stores in memory as key archive
+    - KRunseal
+        - 
+            ```
+            let keyArchive = unseal(skr_i, ska)
+            in for (j, val_j) \in keyArchive do kr_j := val_j
+            ```
+        - restores those values to their original key registers
