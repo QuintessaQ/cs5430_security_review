@@ -1,4 +1,151 @@
 # introduction
+- trustworthy
+    - exhibit all of the functionality users expect,
+    - not exhibit any unexpected functionality
+    - be accompanied by some compelling basis to believe that to be so
+- byzantine fault-tolerance
+    - insufficient
+    - involves tolerating hardware and software faults whose manifestations range from benign to arbitrary and malicious behavior
+    - almost exclusively focus on ensuring that correct system outputs are produced in a timely manner
+        - other security properties, e.g. confidentiality, ignored
+    - employ replication    
+        - antithetical to confidentiality
+    - assume the failure of one replica is unlikely to effect another
+
+## Attacks, Threats, and Vulnerabilities
+- threats
+    - ![Taxonomy of Cybersecurity Threats](imgs/threats.png)
+    - social engineerings
+        - attacks that employ human interaction and trickery to cause some outcome an attacker seeks. 
+        - defense
+            - educating the workforce about acceptable and unacceptable behavior
+- sources of vulnerabilities
+    - errors in a system’s design or implementation.
+    - implicit assumptions made by developers
+        - buffer overflow attacks
+    - denial of service
+        - increase system load
+        - causing critical tasks to be delayed
+        - assumptions about timing are violated
+    - weaker sets of assumptions
+        - exhibit fewer vulnerabilities
+        - more expensive and typically more complicated.
+
+## Security Properties
+- Confidentiality / secrecy
+    - Which principals are allowed to learn what information
+- Integrity
+    - What changes to the system (stored information and resource usage) and to its environment (outputs) are allowed. 
+- Availability
+    - When must inputs be read or outputs produced. 
+- confidentiality
+    - information flow
+        ```
+        pub = 0
+        if priv = 1 then pub = 1
+        ```
+        - info flows from priv to pub
+    - covert channel
+        - a program might intensively access a system disk 
+        - only after reading a certain value from a confidential variable and not after reading other values
+    - making inferences from statistical calculations
+    - confidentiality is a security property
+    - privacy is a right
+- integrity
+    - proscribe specified “bad things” from occurring during execution
+    - high-integrity data not be contaminated by low-integrity data
+    - we label as low integrity anything obtained from the Internet, and we label as high integrity all local content;
+- availability
+    -  prescribe that a “good thing” happens during execution.
+        - program correctness, such as execution terminates (useful for a system call),
+        - execution does not terminate (useful for an operating system)
+        - requests are processed in a fair manner
+
+## Assurance Matters
+- trusted != trustworthy
+- Principle: Economy of Mechanism. 
+    - Prefer mechanisms that are simpler and smaller, hence easier to understand, easier to get right, and easier to have confidence that they are right.
+- trusted computing base (TCB)
+    - some aspect of the system’s behavior is going to be considered more critical. 
+    - It is often a small set of security properties but can be virtually any property. 
+    - PCB is the set of mechanisms (along with any associated configuration files) required to support that critical functionality
+    - endeavor to ensure that TCB is trustworthy
+
+## Enforcement Principles
+- enforcement mechanism
+    - either prevent that execution 
+    - or recover from its effects. 
+- attackers must be unable to
+    - replace or modify the code that implements the enforcement mechanism
+    - circumvent the enforcement mechanism
+    - alter files or data structures used by the enforcement mechanism. 
+- separation of policy and mechanism
+    - prefer mechanisms where changing from one policy to another within that space is easily accommodated.
+- defending against attack
+    - isolation
+        - software is used to create isolation by restricting communication between programs, subsystems, or systems.
+        - virtual machines
+            - behaves as if it were an isolated computer despite other execution on the underlying hardware
+        - sandbox
+            - all operations on the environment’s resources are redirected to shadow copies of those resources.
+            - shields the real instances of resources from the effects of attacks per- petrated by the sandboxed software 
+        - processes
+            - Each process executes in its own isolated address space
+    - detecting and blocking communications
+        - Firewalls
+            - A firewall interrupts the connection from an enclave of com- puters to some network
+        - Code Signing
+            - provenance (who produced the content) becomes a criteria for deciding whether that content is safe to execute.
+            - e.g. trust microsoft produced software
+        - monitoring
+            - monitor a set of interfaces and halt execution before any damage is done using operations those interfaces provide.
+            - security policy
+                - prescribing acceptable sequences
+            - reference monitor
+                -  a program that is guaranteed to receive control whenever any operation named in the policy is requested
+            - a mean
+                - by which the reference monitor can block further execution that does not comply with the policy.
+    - Principle: Complete Mediation. 
+        - The reference monitor intercepts every access to every object. 
+        - safe but extreme
+    - Principle: Least Privilege. 
+        - A principal should be only accorded the minimum privileges it needs to accomplish its task.
+        - The more privi- leges a principal has, the more damage that principal can inflict
+    - Principle: Separation of Privilege. 
+        - Different accesses should require different privileges.
+    - Principle: Failsafe Defaults
+        - The presence of privileges rather than the absence of prohibitions should be the basis for determining whether an access is allowed to proceed. 
+- recovery
+    - Attacks whose effects are reversible could be allowed to run their course, if a recovery mechanism were available afterwards to undo any damage
+    - cannot be reversed
+        - confidentiality violation
+            - secret revealed
+        - integrity violation
+            - recovery can be used to defend against attacks whose sole effect is to change that state
+            - take frequent backup
+        - availability violation
+            - evict the attacker and resume normal processing.
+- defense in depth
+    - depend on a collection of complementary mechanisms rather than trusting a single mechanism
+    - complementary
+        - exhibit independence
+            - any attack that compromises one mechanism would be unlikely to compromise the others
+        - overlap
+            - attackers can succeed only by compromising multiple mechanisms in the collection.
+- secrecy of design
+    - 
+
+## Real World Physical Security    
+### Security through Accountability
+- Authorization
+    - An authorization mechanism governs whether requested actions are allowed to proceed. 
+- Authentication. 
+    - An authentication mechanism associates a principal and perhaps those it speaks for with actions or communications. 
+- Audit
+    - An audit mechanism records system activity, attributing each action to some responsible principal. 
+- Accountability
+    - Hold people legally responsible for actions they insti- gate. 
+
 
 
 # Authentication of Machines
@@ -717,15 +864,25 @@
         ```
 
 ## Remote attestation
-
 - remote attestation protocol returns to its initiator
     - the name P for a measured principal being executed by a remote host,
     - an attestation public key K^att_P for verifying signatures on messages digitally signed by P.
 
 ### A Remote Attestation Protocol
 - ![remote attestation](imgs/remote_att.png)
-- dependson following assumptions
+- protocol
+    - 1. R -> S: <r, P>, where r is a fresh nounce
+    - 2. S: generate fresh public/private keys K^att_P/k^att_P for use with a gating function [k^att_P-S](*), where Config([k^att_P]-S) = {P}
+    - 3. S -> R: [k^att_S-S](r, P, K^att_P)
+    - 4. R: accept K^att_P as a remote attestation key for P provided:
+        - (a) Nounce r and name P received in step 3 are the same values as sent in step 1
+        - (b) K^att_S verifies digital signature received step 3
+- depends on following assumptions
     - R trusts S and has an attestation public key K^att_S that verifies signatures on messages digitally signed by S.
     - S is the environment that executes P. 
         - Thus, description D_S is a prefix of D_P and P = N(D_P)
     - S implements gating function [k^att_P-S](⋅) for generating digital signatures
+- Formal Analysis of Remote Attestation Protocol
+    - goal of the protocol 
+        - for initiator R to obtain values for P and K^att_P satisfying
+        - K^att_P speaksfor P
